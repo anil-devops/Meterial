@@ -1,0 +1,372 @@
+{
+	"AWSTemplateFormatVersion": "2010-09-09",
+	"Description": "Demo Template for Peer learning program",
+	"Parameters": {
+		"01VPCCIDRBlock": {
+			"Default": "10.0.0.0/16",
+			"Description": "Please enter the CIDR Block for the VPC.",
+			"Type": "String",
+			"MinLength": "9",
+			"MaxLength": "18",
+			"AllowedPattern": "^(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})?",
+			"ConstraintDescription": "Must be valid CIDR net block in the form x.x.x.x/x."
+		},
+		"02PublicSubnetCIDRBlock": {
+			"Default": "10.0.1.0/24",
+			"Description": "Please enter the CIDR Block for the PublicSubnet",
+			"Type": "String",
+			"MinLength": "9",
+			"MaxLength": "18",
+			"AllowedPattern": "^(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})\\.(\\d{1,3})/(\\d{1,2})?",
+			"ConstraintDescription": "Must be valid CIDR net block in the form x.x.x.x/x."
+		},
+		
+		"03InstanceType": {
+			"Description": "EC2 instance type",
+			"Type": "String",
+			"Default": "t2.micro",
+			"AllowedValues": ["t1.micro", "t2.nano", "t2.micro", "t2.small", "t2.medium", "t2.large", "m1.small", "m1.medium", "m1.large", "m1.xlarge", "m2.xlarge", "m2.2xlarge", "m2.4xlarge", "m3.medium", "m3.large", "m3.xlarge", "m3.2xlarge", "m4.large", "m4.xlarge", "m4.2xlarge", "m4.4xlarge", "m4.10xlarge", "c1.medium", "c1.xlarge", "c3.large", "c3.xlarge", "c3.2xlarge", "c3.4xlarge", "c3.8xlarge", "c4.large", "c4.xlarge", "c4.2xlarge", "c4.4xlarge", "c4.8xlarge", "g2.2xlarge", "g2.8xlarge", "r3.large", "r3.xlarge", "r3.2xlarge", "r3.4xlarge", "r3.8xlarge", "i2.xlarge", "i2.2xlarge", "i2.4xlarge", "i2.8xlarge", "d2.xlarge", "d2.2xlarge", "d2.4xlarge", "d2.8xlarge", "hi1.4xlarge", "hs1.8xlarge", "cr1.8xlarge", "cc2.8xlarge", "cg1.4xlarge"],
+			"ConstraintDescription": "must be a valid EC2 instance type."
+		},
+		"04ServerKeyName": {
+			"Description": "Name of Existing EC2 Keypair for Servers",
+			"Default": "EC2-1",
+			"Type": "AWS::EC2::KeyPair::KeyName"
+		}
+	},
+	"Mappings": {
+		"AWSInstanceType2Arch": {
+			  "t1.micro"    : { "Arch" : "PV64"   },
+			  "t2.nano"     : { "Arch" : "HVM64"  },
+			  "t2.micro"    : { "Arch" : "HVM64"  },
+			  "t2.small"    : { "Arch" : "HVM64"  },
+			  "t2.medium"   : { "Arch" : "HVM64"  },
+			  "t2.large"    : { "Arch" : "HVM64"  },
+			  "m1.small"    : { "Arch" : "PV64"   },
+			  "m1.medium"   : { "Arch" : "PV64"   },
+			  "m1.large"    : { "Arch" : "PV64"   },
+			  "m1.xlarge"   : { "Arch" : "PV64"   },
+			  "m2.xlarge"   : { "Arch" : "PV64"   },
+			  "m2.2xlarge"  : { "Arch" : "PV64"   },
+			  "m2.4xlarge"  : { "Arch" : "PV64"   },
+			  "m3.medium"   : { "Arch" : "HVM64"  },
+			  "m3.large"    : { "Arch" : "HVM64"  },
+			  "m3.xlarge"   : { "Arch" : "HVM64"  },
+			  "m3.2xlarge"  : { "Arch" : "HVM64"  },
+			  "m4.large"    : { "Arch" : "HVM64"  },
+			  "m4.xlarge"   : { "Arch" : "HVM64"  },
+			  "m4.2xlarge"  : { "Arch" : "HVM64"  },
+			  "m4.4xlarge"  : { "Arch" : "HVM64"  },
+			  "m4.10xlarge" : { "Arch" : "HVM64"  },
+			  "c1.medium"   : { "Arch" : "PV64"   },
+			  "c1.xlarge"   : { "Arch" : "PV64"   },
+			  "c3.large"    : { "Arch" : "HVM64"  },
+			  "c3.xlarge"   : { "Arch" : "HVM64"  },
+			  "c3.2xlarge"  : { "Arch" : "HVM64"  },
+			  "c3.4xlarge"  : { "Arch" : "HVM64"  },
+			  "c3.8xlarge"  : { "Arch" : "HVM64"  },
+			  "c4.large"    : { "Arch" : "HVM64"  },
+			  "c4.xlarge"   : { "Arch" : "HVM64"  },
+			  "c4.2xlarge"  : { "Arch" : "HVM64"  },
+			  "c4.4xlarge"  : { "Arch" : "HVM64"  },
+			  "c4.8xlarge"  : { "Arch" : "HVM64"  },
+			  "g2.2xlarge"  : { "Arch" : "HVMG2"  },
+			  "g2.8xlarge"  : { "Arch" : "HVMG2"  },
+			  "r3.large"    : { "Arch" : "HVM64"  },
+			  "r3.xlarge"   : { "Arch" : "HVM64"  },
+			  "r3.2xlarge"  : { "Arch" : "HVM64"  },
+			  "r3.4xlarge"  : { "Arch" : "HVM64"  },
+			  "r3.8xlarge"  : { "Arch" : "HVM64"  },
+			  "i2.xlarge"   : { "Arch" : "HVM64"  },
+			  "i2.2xlarge"  : { "Arch" : "HVM64"  },
+			  "i2.4xlarge"  : { "Arch" : "HVM64"  },
+			  "i2.8xlarge"  : { "Arch" : "HVM64"  },
+			  "d2.xlarge"   : { "Arch" : "HVM64"  },
+			  "d2.2xlarge"  : { "Arch" : "HVM64"  },
+			  "d2.4xlarge"  : { "Arch" : "HVM64"  },
+			  "d2.8xlarge"  : { "Arch" : "HVM64"  },
+			  "hi1.4xlarge" : { "Arch" : "HVM64"  },
+			  "hs1.8xlarge" : { "Arch" : "HVM64"  },
+			  "cr1.8xlarge" : { "Arch" : "HVM64"  },
+			  "cc2.8xlarge" : { "Arch" : "HVM64"  }
+		},
+		"AWSRegionArch2AMI": {
+			"us-east-1": {
+				"PV64": "ami-2a69aa47",
+				"HVM64": "ami-6869aa05",
+				"HVMG2": "ami-bb18efad"
+			},
+			"us-west-2": {
+				"PV64": "ami-7f77b31f",
+				"HVM64": "ami-7172b611",
+				"HVMG2": "ami-31912f51"
+			},
+			"us-west-1": {
+				"PV64": "ami-a2490dc2",
+				"HVM64": "ami-31490d51",
+				"HVMG2": "ami-0a9dcf6a"
+			},
+			"eu-west-1": {
+				"PV64": "ami-4cdd453f",
+				"HVM64": "ami-f9dd458a",
+				"HVMG2": "ami-873e61e1"
+			},
+			"eu-west-2": {
+				"PV64": "NOT_SUPPORTED",
+				"HVM64": "ami-886369ec",
+				"HVMG2": "NOT_SUPPORTED"
+			},
+			"eu-central-1": {
+				"PV64": "ami-6527cf0a",
+				"HVM64": "ami-ea26ce85",
+				"HVMG2": "ami-a16ba4ce"
+			},
+			"ap-northeast-1": {
+				"PV64": "ami-3e42b65f",
+				"HVM64": "ami-374db956",
+				"HVMG2": "ami-6b443f0c"
+			},
+			"ap-northeast-2": {
+				"PV64": "NOT_SUPPORTED",
+				"HVM64": "ami-2b408b45",
+				"HVMG2": "NOT_SUPPORTED"
+			},
+			"ap-southeast-1": {
+				"PV64": "ami-df9e4cbc",
+				"HVM64": "ami-a59b49c6",
+				"HVMG2": "ami-1c0ba17f"
+			},
+			"ap-southeast-2": {
+				"PV64": "ami-63351d00",
+				"HVM64": "ami-dc361ebf",
+				"HVMG2": "ami-bf0d0adc"
+			},
+			"ap-south-1": {
+				"PV64": "NOT_SUPPORTED",
+				"HVM64": "ami-ffbdd790",
+				"HVMG2": "ami-6135440e"
+			},
+			"us-east-2": {
+				"PV64": "NOT_SUPPORTED",
+				"HVM64": "ami-f6035893",
+				"HVMG2": "NOT_SUPPORTED"
+			},
+			"ca-central-1": {
+				"PV64": "NOT_SUPPORTED",
+				"HVM64": "ami-730ebd17",
+				"HVMG2": "NOT_SUPPORTED"
+			},
+			"sa-east-1": {
+				"PV64": "ami-1ad34676",
+				"HVM64": "ami-6dd04501",
+				"HVMG2": "NOT_SUPPORTED"
+			},
+			"cn-north-1": {
+				"PV64": "ami-77559f1a",
+				"HVM64": "ami-8e6aa0e3",
+				"HVMG2": "NOT_SUPPORTED"
+			}
+		}
+	},
+	"Resources": {
+		"DemoVPC": {
+			"Type": "AWS::EC2::VPC",
+			"Properties": {
+				"CidrBlock": {
+					"Ref": "01VPCCIDRBlock"
+				},
+				"EnableDnsSupport": "true",
+				"EnableDnsHostnames": "true",
+				"Tags": [
+
+					{
+						"Key": "Name",
+						"Value": "Demo-VPC"
+					}
+				]
+			}
+		},
+		"DemoInternetGateway": {
+			"DependsOn": "DemoVPC",
+			"Type": "AWS::EC2::InternetGateway",
+			"Properties": {
+				"Tags": [
+
+					{
+						"Key": "Name",
+						"Value": "Demo-IGW"
+					}
+				]
+			}
+		},
+
+		"DemoAttachGateway": {
+			"Type": "AWS::EC2::VPCGatewayAttachment",
+			"Properties": {
+				"VpcId": {
+					"Ref": "DemoVPC"
+				},
+				"InternetGatewayId": {
+					"Ref": "DemoInternetGateway"
+				}
+			}
+		},
+
+		"PublicSubnetRouteTable": {
+			"Type": "AWS::EC2::RouteTable",
+			"Properties": {
+				"VpcId": {
+					"Ref": "DemoVPC"
+				},
+				"Tags": [
+
+					{
+						"Key": "Name",
+						"Value": "Public-Subnet-RouteTable"
+					}
+				]
+			}
+		},
+		
+
+		"PublicRouteViaIGW": {
+			"Type": "AWS::EC2::Route",
+			"Properties": {
+				"RouteTableId": {
+					"Ref": "PublicSubnetRouteTable"
+				},
+				"DestinationCidrBlock": "0.0.0.0/0",
+				"GatewayId": {
+					"Ref": "DemoInternetGateway"
+				}
+			}
+		},
+
+		"PublicSubnet": {
+			"Type": "AWS::EC2::Subnet",
+			"Properties": {
+				"MapPublicIpOnLaunch" : "true",
+				"VpcId": {
+					"Ref": "DemoVPC"
+				},
+				"CidrBlock": {
+					"Ref": "02PublicSubnetCIDRBlock"
+				},
+				"Tags": [
+
+					{
+						"Key": "Name",
+						"Value": "Demo-Public-Subnet"
+					}
+
+
+				]
+			}
+		},
+
+		"PublicSubnetRouteTableAssociation": {
+			"Type": "AWS::EC2::SubnetRouteTableAssociation",
+			"Properties": {
+				"SubnetId": {
+					"Ref": "PublicSubnet"
+				},
+				"RouteTableId": {
+					"Ref": "PublicSubnetRouteTable"
+				}
+			}
+		},
+		
+		"PublicInstanceSG": {
+		"DependsOn" : "PublicRouteViaIGW",
+			"Type": "AWS::EC2::SecurityGroup",
+			"Properties": {
+				"GroupDescription": "Security group for Public Server",
+				"Tags": [
+
+					{
+						"Key": "Name",
+						"Value": "Public-SG"
+					}
+				],
+				"VpcId": {
+					"Ref": "DemoVPC"
+				}
+			}
+		},
+
+		"PublicInstanceSGRule1": {
+			"Type": "AWS::EC2::SecurityGroupIngress",
+			"Properties": {
+				"GroupId": {
+					"Ref": "PublicInstanceSG"
+				},
+				"IpProtocol": "-1",
+				"FromPort": "0",
+				"ToPort": "65535",
+				"CidrIp": "0.0.0.0/0"
+			}
+		},
+
+
+
+		"PublicInstance": {
+
+			"Type": "AWS::EC2::Instance",
+			"Properties": {
+				"InstanceType": {
+					"Ref": "03InstanceType"
+				},
+				"SubnetId": {
+					"Ref": "PublicSubnet"
+				},
+				"ImageId": {
+					"Fn::FindInMap": ["AWSRegionArch2AMI", {
+						"Ref": "AWS::Region"
+					}, {
+						"Fn::FindInMap": ["AWSInstanceType2Arch", {
+							"Ref": "03InstanceType"
+						}, "Arch"]
+					}]
+				},
+				"Tags": [
+
+					{
+						"Key": "Name",
+						"Value": "Demo-PublicInstance"
+					}
+				],
+				"KeyName": { "Ref": "04ServerKeyName" },
+				"UserData" : {
+					"Fn::Base64" : { 
+							"Fn::Join" : ["", [
+							"#!/bin/bash -xe\n",
+							"yum install -y httpd \n",
+							"service httpd start \n",
+							"chkconfig httpd on"]]
+					}
+					}
+				}
+		}
+	
+	},
+	"Outputs": {
+		"Region": {
+			"Description": "Region in which stack is created",
+			"Value": {
+				"Ref": "AWS::Region"
+			}
+		},
+		"DemoVPCID": {
+			"Description": "VPC ID created",
+			"Value": {
+				"Ref": "DemoVPC"
+			}
+		},
+		
+		"InstanceIPAddress": {
+			"Description": "IP of the Instance created",
+			"Value": { "Fn::GetAtt" : [ "PublicInstance", "PublicIp" ]}
+			
+		}
+	}
+}
